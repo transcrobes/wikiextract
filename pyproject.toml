@@ -1,0 +1,113 @@
+[tool.poetry]
+name = "wikiextract"
+version = "0.1.0"
+description = "attardi/wikiextractor, with tests and best practices and without (so many) bugs"
+authors = ["Anton Melser <anton@transcrob.es>"]
+license = "AGPL-3.0-or-later"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+bs4 = "^0.0.1"
+
+[tool.poetry.dev-dependencies]
+coverage = {extras = ["toml"], version = "^5.3"}
+pre-commit = "^2.9.2"
+pylint = "^2.6.0"
+flake9 = "^3.8.3"
+pytest = "^6.1.2"
+
+
+[tool.coverage.run]
+omit = [
+    "*manage.py",
+]
+
+[tool.pylint.messages_control]
+# I0011 Warning locally suppressed using disable-msg
+# disabling wrong-import-order because isort is run in pre-commit, pylint ignores [tool.isort] in this file
+# and I can't work out how to get pylint to consider 'known-first-party'
+disable = """
+    invalid-name,
+    logging-fstring-interpolation,
+    fixme,
+    I0011,
+    missing-docstring,
+    C0330,
+    too-few-public-methods,
+    too-many-arguments,
+    C0326,
+    pointless-string-statement,
+    no-member,
+    R0901,
+    R0801,
+    wrong-import-order,
+"""
+
+ignore = """,
+    migrations,
+"""
+
+[tool.pylint.basic]
+# Good variable names which should always be accepted, separated by a comma.
+good-names = "i,j,k,ex,_,f,e,s,w,li,t"
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.isort]
+multi_line_output = 3
+line_length = 120
+known_third_party = "requests_mock,django,mock,pandas,pysankey,pytz,setuptools,yaml,django_wsgi,rest_framework,rest_framework_simplejwt,ankisyncd"
+known_first_party = "transcrobes,ankrobes,enrich,lang,data,en_zhhans,enrichers,zhhans_en,utils"
+# project = "transcrobes"
+include_trailing_comma = "True"
+force_grid_wrap = 0
+use_parentheses = "True"
+
+[tool.flake8]
+ignore = "E226,E266"
+exclude = """,
+    tmp,
+    libs,
+    .git,
+    __pycache__,
+    build,
+    dist,
+    transcrobes/data/experiments.py,
+    transcrobes/data/views.py
+"""
+max-line-length = 120
+max-complexity = 10
+extend-ignore = "E203,W503"
+
+[tool.black]
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    # Add additional patterns here:
+    | .ropeproject
+    | tmp
+    | libs
+    | static
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

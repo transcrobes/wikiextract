@@ -1,18 +1,18 @@
-# WikiExtractor
-[WikiExtractor.py](http://medialab.di.unipi.it/wiki/Wikipedia_Extractor) is a Python script that extracts and cleans text from a [Wikipedia database dump](http://download.wikimedia.org/).
+# WikiExtract
+
+## Foreword
+This project started as a fork of https://github.com/attardi/wikiextractor/commit/87549a91a63b77c442e6592949fc965a28755d99
+
+The original project had a large number of bugs, including Python3 syntax errors, no testing and highly variable code standards. Very simple commands from the `readme` failed after installing from PyPI. PyPI claimed that it required Python 3.6 or later but there were many Python2-only functions (`print` statements, `unichr`, `cgi.unescape`, etc.). Functionality documented in the `readme` had been removed (from the code, not the `readme`).
+
+The intention of this project is to take the codebase at commit `87549a91a63b77c442e6592949fc965a28755d99` and clean up the code and documentation so it can be used by others without each person spending several hours debugging before being able to use it.
+
+The code and documentation cleanup has not yet been completed and is ongoing.
+
+# Introduction
+WikiExtractor.py is a Python script that extracts and cleans text from a [Wikipedia database dump](http://download.wikimedia.org/).
 
 The tool is written in Python and requires Python 3 but no additional library.
-**Warning**: problems have been reported on Windows due to poor support for `StringIO` in the Python implementation on Windows.
-
-For further information, see the [project Home Page](http://medialab.di.unipi.it/wiki/Wikipedia_Extractor) or the [Wiki](https://github.com/attardi/wikiextractor/wiki).
-
-# Wikipedia Cirrus Extractor
-
-`cirrus-extractor.py` is a version of the script that performs extraction from a Wikipedia Cirrus dump.
-Cirrus dumps contain text with already expanded templates.
-
-Cirrus dumps are available at:
-[cirrussearch](http://dumps.wikimedia.org/other/cirrussearch/).
 
 # Details
 
@@ -27,11 +27,11 @@ In order to speed up processing:
 
 The script may be invoked directly:
 
-    python -m wikiextractor.WikiExtractor
+    python -m wikiextract.WikiExtractor
 
 however it can also be installed from `PyPi` by doing:
 
-    pip install wikiextractor
+    pip install wikiextract
 
 or locally with:
 
@@ -42,12 +42,12 @@ or locally with:
 ### Wikiextractor
 The script is invoked with a Wikipedia dump file as an argument:
 
-    python -m wikiextractor.WikiExtractor <Wikipedia dump file>
+    python -m wikiextract.WikiExtractor <Wikipedia dump file>
 
 The output is stored in several files of similar size in a given directory.
 Each file will contains several documents in this [document format](wiki/File-Format).
 
-    usage: WikiExtractor.py [-h] [-o OUTPUT] [-b n[KMG]] [-c] [--json] [--html]
+    usage: WikiExtractor.py [-h] [-o OUTPUT] [-b n[KMG]] [-c] [--html]
                             [-l] [-s] [--lists] [-ns ns1,ns2]
                             [--templates TEMPLATES] [--no-templates] [-r]
                             [--min_text_length MIN_TEXT_LENGTH]
@@ -67,12 +67,6 @@ Each file will contains several documents in this [document format](wiki/File-Fo
             ...
             </doc>
 
-    If the program is invoked with the --json flag, then each file will
-    contain several documents formatted as json ojects, one per line, with
-    the following structure
-
-        {"id": "", "revid": "", "url":"", "title": "", "text": "..."}
-
     Template expansion requires preprocessing first the whole dump and
     collecting template definitions.
 
@@ -91,7 +85,6 @@ Each file will contains several documents in this [document format](wiki/File-Fo
       -b n[KMG], --bytes n[KMG]
                             maximum bytes per output file (default 1M)
       -c, --compress        compress output files using bzip
-      --json                write output in json format instead of the default one
 
     Processing:
       --html                produce HTML output, subsumes --links
@@ -146,60 +139,7 @@ assuming template definitions have not changed.
 Option --no-templates significantly speeds up the extractor, avoiding the cost
 of expanding [MediaWiki templates](https://www.mediawiki.org/wiki/Help:Templates).
 
-For further information, visit [the documentation](http://attardi.github.io/wikiextractor).
-
-### Cirrus Extractor
-
-~~~
-usage: cirrus-extract.py [-h] [-o OUTPUT] [-b n[KMG]] [-c] [-ns ns1,ns2] [-q]
-                         [-v]
-                         input
-
-Wikipedia Cirrus Extractor:
-Extracts and cleans text from a Wikipedia Cirrus dump and stores output in a
-number of files of similar size in a given directory.
-Each file will contain several documents in the format:
-
-	<doc id="" url="" title="" language="" revision="">
-        ...
-        </doc>
-
-positional arguments:
-  input                 Cirrus Json wiki dump file
-
-optional arguments:
-  -h, --help            show this help message and exit
-
-Output:
-  -o OUTPUT, --output OUTPUT
-                        directory for extracted files (or '-' for dumping to
-                        stdin)
-  -b n[KMG], --bytes n[KMG]
-                        maximum bytes per output file (default 1M)
-  -c, --compress        compress output files using bzip
-
-Processing:
-  -ns ns1,ns2, --namespaces ns1,ns2
-                        accepted namespaces
-
-Special:
-  -q, --quiet           suppress reporting progress info
-  -v, --version         print program version
-~~~
-
 ## License
-The code is made available under the [GNU Affero General Public License v3.0](LICENSE). 
+The code is made available under the [GNU Affero General Public License v3.0](LICENSE).
 
-## Reference
-If you find this code useful, please refer it in publications as:
-
-~~~
-@misc{Wikiextractor2015,
-  author = {Giusepppe Attardi},
-  title = {WikiExtractor},
-  year = {2015},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/attardi/wikiextractor}}
-}
-~~~
+This project started as a fork of https://github.com/attardi/wikiextractor/commit/87549a91a63b77c442e6592949fc965a28755d99. This project is available under the same conditions as the original code.
