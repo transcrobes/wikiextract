@@ -30,17 +30,18 @@ In order to speed up processing:
 
 ## Installation
 
-however it can also be installed from `PyPi` by doing:
+`wikiextract` can also be installed from `PyPi` with the following (COMING SOON):
 
     pip install wikiextract
 
-The script may be invoked directly:
+The script may be invoked directly after cloning from github:
 
-    python -m wikiextract.extractor
+    git clone https://github.com/transcrobes/wikiextract.git && cd wikiextract
+    python -m src.wikiextract.extractor
 
 ## Usage
 
-### wikiextract
+### wikiextract.extractor
 
 The programme may be invoked from the project root directory with a Wikipedia dump file as an argument:
 
@@ -141,6 +142,50 @@ assuming template definitions have not changed.
 
 Option --no-templates significantly speeds up the extractor, avoiding the cost
 of expanding [MediaWiki templates](https://www.mediawiki.org/wiki/Help:Templates).
+
+
+
+### wikiextract.textchunks
+
+`textchunks` allows you to get an arbitrarily large block of text containing only complete articles (i.e., it won't take X articles and then give you the first Y characters from the last article), selected random(ish)ly. It allows you to select a maximum output size in characters or bytes, and allows filtering on max/min article size and the presence or absence of a particular string in the article. If you need an exact character or byte count and don't care about having partial articles, you can ask for a larger value and truncate yourself afterwards.
+
+`textchunks` works on the output of `wikiextract.extractor`. The only required parameter is a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) selecting files output from `wikiextract.extractor`.
+
+`textchunks` allows, for example, randomly selecting 2.4 MB of articles that are at least 2000 characters long that have the word 'building' but don't have the word 'construction'. Currently only string matching is possible, regular expressions may be implemented in a later version.
+
+    usage: textchunks.py [-h] [-o OUTPUT_PATH] [--required_size REQUIRED_SIZE] [--max_files MAX_FILES] [--min_article_size MIN_ARTICLE_SIZE]
+                         [--max_article_size MAX_ARTICLE_SIZE] [--has_text HAS_TEXT] [--doesnt_have_text DOESNT_HAVE_TEXT]
+                         [--article_separator ARTICLE_SEPARATOR] [-q] [--debug]
+                         input_glob
+
+    positional arguments:
+      input_glob            Input glob to find files to process
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+    Output:
+      -o OUTPUT_PATH, --output_path OUTPUT_PATH
+                            Filepath for the output file (if not supplied output to stdout)
+      --required_size REQUIRED_SIZE
+                            Output size, nb of characters if an int, or (kilo|mega|giga)bytes if followed by (K|M|G)
+
+    Filtering:
+      --max_files MAX_FILES
+                            Maximum number of input files to process
+      --min_article_size MIN_ARTICLE_SIZE
+                            Minimum article size or ignore, nb of characters if an int, or (kilo|mega|giga)bytes if followed by (K|M|G)
+      --max_article_size MAX_ARTICLE_SIZE
+                            Maximum article size or ignore , nb of characters if an int, or (kilo|mega|giga)bytes if followed by (K|M|G)
+      --has_text HAS_TEXT   Ignore articles unless they contain this text
+      --doesnt_have_text DOESNT_HAVE_TEXT
+                            Ignore articles if they contain this text
+      --article_separator ARTICLE_SEPARATOR
+                            Add this separator between articles in the resulting output
+
+    logging:
+      -q, --quiet           Suppress reporting progress info
+      --debug               Print debug info
 
 ## Development
 This project uses `pyproject.toml` and `poetry` for project management, `pre-commit` (including `black`) and `pylint` for style and static checking, and `pytest` for testing.

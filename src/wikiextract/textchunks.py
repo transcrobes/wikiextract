@@ -9,7 +9,8 @@ from operator import itemgetter
 from random import randrange
 
 from bs4 import BeautifulSoup
-from sortedcollection import SortedCollection
+
+from .sortedcollection import SortedCollection
 
 logger = logging.getLogger(__name__)
 

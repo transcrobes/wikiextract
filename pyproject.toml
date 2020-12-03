@@ -8,6 +8,7 @@ license = "AGPL-3.0-or-later"
 [tool.poetry.dependencies]
 python = "^3.8"
 bs4 = "^0.0.1"
+lxml = {version = "^4.6.2", optional = true}
 
 [tool.poetry.dev-dependencies]
 coverage = {extras = ["toml"], version = "^5.3"}
@@ -15,7 +16,10 @@ pre-commit = "^2.9.2"
 pylint = "^2.6.0"
 flake9 = "^3.8.3"
 pytest = "^6.1.2"
+lxml = "^4.6.2"
 
+[tool.poetry.extras]
+chunks = ["lxml"]
 
 [tool.coverage.run]
 omit = [
