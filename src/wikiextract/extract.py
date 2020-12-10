@@ -213,7 +213,7 @@ def clean(extractor, text, expand_templates=False, escape_doc=True):  # noqa: C9
     text = re.sub(r"\n\W+?\n", "\n", text, flags=re.U)  # lines with only punctuations
     text = text.replace(",,", ",").replace(",.", ".")
     if escape_doc:
-        text = html.escape(text)
+        text = html.escape(text, quote=False)
 
     return text
 
@@ -259,9 +259,7 @@ def compact(text, mark_headers=False):  # noqa: C901 # pylint: disable=R1702,R09
 
             headers[lev] = title
             # drop previous headers
-            for i in list(headers.keys()):
-                if i > lev:
-                    del headers[i]
+            headers = {k: v for k, v in headers.items() if k <= lev}
             empty_section = True
             continue
         # Handle page title
@@ -314,15 +312,7 @@ def compact(text, mark_headers=False):  # noqa: C901 # pylint: disable=R1702,R09
             continue
         elif len(headers) > 0:
             if Extractor.keep_sections:
-                # FIXME: these are POINTLESS instructions - sorted() doesn't do in-place so this is a total n00b error
-                # However, maybe it SHOULD be doing it in-place? Should this get replaced with items.sort()?
-                # probably the whole thing should just be something like
-                # page.append([v for k, v in sorted(headers.items())])
-                # or maybe
-                # page.append(sorted([v for k, v in headers.items()]))
-
-                items = headers.items()
-                sorted(items)
+                items = sorted(headers.items())
                 for (i, v) in items:
                     page.append(v)
             headers.clear()
@@ -336,16 +326,6 @@ def compact(text, mark_headers=False):  # noqa: C901 # pylint: disable=R1702,R09
             #     continue
 
     return page
-
-
-def handle_unicode(entity):
-    numeric_code = int(entity[2:-1])
-    if numeric_code >= 0x10000:
-        return ""
-    return chr(numeric_code)
-
-
-# ----------------------------------------------------------------------
 
 
 def drop_nested(text, open_delimiter, close_delimiter):  # noqa: C901 # pylint: disable=R0912
@@ -507,7 +487,7 @@ def replace_external_links(text):
 def make_external_link(url, anchor):
     """Function applied to wikiLinks"""
     if Extractor.keep_links:
-        return '<a href="%s">%s</a>' % (urllib.parse.quote(url.encode("utf-8")), anchor)
+        return '<a href="%s">%s</a>' % (urllib.parse.quote(url), anchor)
     return anchor
 
 
@@ -926,16 +906,15 @@ class Extractor:  # pylint: disable=R0902
         header = '<doc id="%s" url="%s" title="%s">\n' % (self.id, url, self.title)
         # Separate header from text with a newline.
         header += self.title + "\n\n"
-        header = header.encode("utf-8")
         footer = "\n</doc>\n"
         out.write(header)
 
         text = self.clean_text(text, escape_doc=escape_doc)
 
         for line in text:
-            out.write(line.encode("utf-8"))
-            out.write("\n".encode("utf-8"))
-        out.write(footer.encode("utf-8"))
+            out.write(line)
+            out.write("\n")
+        out.write(footer)
         errs = (
             self.template_title_errs,
             self.recursion_exceeded_1_errs,

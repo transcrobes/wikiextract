@@ -19,8 +19,7 @@ collecting template definitions.
 
 import argparse
 import bz2
-import codecs
-import fileinput
+import gzip
 import logging
 import os.path
 import re
@@ -88,19 +87,6 @@ MIN_OUTPUT_FILE_SIZE = 200 * 1024  # Minimum size of output files
 
 TAG_RE = re.compile(r"(.*?)<(/?\w+)[^>]*>(?:([^<]*)(<.*?>)?)?")
 #                    1     2               3      4
-
-
-# ----------------------------------------------------------------------
-# Expand using WikiMedia API
-# import json
-
-# def expand_templates(text):
-#     """Expand templates invoking MediaWiki API"""
-#     text = urlib.urlencodew(text.encode('utf-8'))
-#     base = urlbase[:urlbase.rfind('/')]
-#     url = base + "/w/api.php?action=expandtemplates&format=json&text=" + text
-#     exp = json.loads(urllib.urlopen(url))
-#     return exp['expandtemplates']['*']
 
 # ------------------------------------------------------------------------------
 # Output
@@ -181,12 +167,12 @@ def load_templates(file_handle, output_file=None):  # noqa: C901 # pylint: disab
     global moduleNamespace, modulePrefix
     modulePrefix = moduleNamespace + ":"
     articles = 0
+    templates = 0
     page = []
     in_text = False
     if output_file:
-        output = codecs.open(output_file, "wb", "utf-8")
+        output = open(output_file, "wb")
     for line in file_handle:
-        line = line.decode("utf-8")
         if "<" not in line:  # faster than doing re.search()
             if in_text:
                 page.append(line)
@@ -227,21 +213,34 @@ def load_templates(file_handle, output_file=None):  # noqa: C901 # pylint: disab
             # save templates and modules to file
             if output_file and (title.startswith(templatePrefix) or title.startswith(modulePrefix)):
                 output.write("<page>\n")
-                output.write("   <title>%s</title>\n" % title)
+                output.write("   <title>%s</title>\n" % title.encode("utf-8"))
                 output.write("   <ns>10</ns>\n")
                 output.write("   <text>")
                 for aline in page:
-                    output.write(aline)
+                    output.write(aline.encode("utf-8"))
                 output.write("   </text>\n")
                 output.write("</page>\n")
+                templates += 1
             page = []
             articles += 1
             if articles % 100000 == 0:
                 logger.info("Preprocessed %d pages", articles)
     if output_file:
         output.close()
-        # FIXME: get rid of this ridiculous global variable
-        logger.info("Saved %d templates to '%s'", len(templates), output_file)  # noqa: F821 # pylint: disable=E0602
+        logger.info("Saved %d templates to '%s'", templates, output_file)
+    return templates
+
+
+def decode_open(filename, mode="rt", encoding="utf-8"):
+    """
+    Open a file, decode and decompress, depending on extension `gz`, or 'bz2`.
+    """
+    ext = os.path.splitext(filename)[1]
+    if ext == ".gz":
+        return gzip.open(filename, mode)
+    if ext == ".bz2":
+        return bz2.open(filename, mode=mode, encoding=encoding)
+    return open(filename, mode, encoding=encoding)
 
 
 def process_dump(  # noqa: C901
@@ -260,14 +259,9 @@ def process_dump(  # noqa: C901
     global templateNamespace, templatePrefix
     global moduleNamespace, modulePrefix
 
-    if input_file == "-":
-        input_source = sys.stdin
-    else:
-        input_source = fileinput.FileInput(input_file, openhook=fileinput.hook_compressed)
-
+    input_source = decode_open(input_file)
     # collect siteinfo
     for line in input_source:
-        line = line.decode("utf-8")
         m = TAG_RE.search(line)
         if not m:
             continue
@@ -293,22 +287,22 @@ def process_dump(  # noqa: C901
         template_load_start = default_timer()
         if template_file and os.path.exists(template_file):
             logger.info("Preprocessing '%s' to collect template definitions: this may take some time.", template_file)
-            file_input = fileinput.FileInput(template_file, openhook=fileinput.hook_compressed)
-            load_templates(file_input)
+            file_input = decode_open(template_file)
+            templates = load_templates(file_input)
             file_input.close()
         else:
             if input_file == "-":
                 # can't scan then reset stdin; must error w/ suggestion to specify template_file
                 raise ValueError("to use templates with stdin dump, must supply explicit template-file")
             logger.info("Preprocessing '%s' to collect template definitions: this may take some time.", input_file)
-            load_templates(input_source, template_file)
+            templates = load_templates(input_source, template_file)
             input_source.close()
-            input_source = fileinput.FileInput(input_file, openhook=fileinput.hook_compressed)
+            input_source = decode_open(input_file)
         template_load_elapsed = default_timer() - template_load_start
 
         # FIXME: get rid of this horrible global variable
         logger.info(
-            "Loaded %d templates in %.1fs", len(templates), template_load_elapsed  # noqa: F821  # pylint: disable=E0602
+            "Loaded %d templates in %.1fs", templates, template_load_elapsed  # noqa: F821  # pylint: disable=E0602
         )
 
     if out_file == "-":
@@ -318,7 +312,6 @@ def process_dump(  # noqa: C901
     else:
         next_file = NextFile(out_file)
         output = OutputSplitter(next_file, file_size, file_compress)
-
     # process pages
     logger.info("Starting page extraction from %s.", input_file)
     extract_start = default_timer()
@@ -358,7 +351,6 @@ def process_dump(  # noqa: C901
     in_text = False
     redirect = False
     for line in input_source:
-        line = line.decode("utf-8")
         if "<" not in line:  # faster than doing re.search()
             if in_text:
                 page.append(line)
@@ -400,6 +392,12 @@ def process_dump(  # noqa: C901
                 jobs_queue.put(job)  # goes to any available extract_process
                 last_id = article_id
                 ordinal += 1
+            else:
+                logger.debug(
+                    f"{colon=}, {acceptedNamespaces=}, {title=}, {article_id=}, {templateNamespace=}"
+                    f"{redirect=}, {(colon < 0 or title[:colon] in acceptedNamespaces)=}, {article_id != last_id=}"
+                    f"{redirect=}, {title.startswith(templateNamespace)=}"
+                )
             article_id = None
             page = []
 
@@ -478,9 +476,6 @@ def reduce_process(output_queue, output):
                 break
             ordinal, text = pair
             ordering_buffer[ordinal] = text
-
-
-# ----------------------------------------------------------------------
 
 
 def main():  # noqa: C901 # pylint: disable=R0912,R0914,R0915

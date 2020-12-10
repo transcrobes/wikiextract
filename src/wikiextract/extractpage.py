@@ -28,14 +28,12 @@ def process_data(input_file, article_id, templates=False):  # noqa: C901 # pylin
     :param id: article id
     """
 
-    if input_file.lower().endswith("bz2"):
-        opener = bz2.BZ2File
-    else:
-        opener = open
+    opener = bz2.BZ2File if input_file.lower().endswith("bz2") else open
 
     with opener(input_file) as input_filehandle:
         page = []
         for line in input_filehandle:
+            # FIXME: the following may or may not be required, it is hard to tell
             line = line.decode("utf-8")
             if "<" not in line:  # faster than doing re.search()
                 if page:
@@ -67,7 +65,7 @@ def process_data(input_file, article_id, templates=False):  # noqa: C901 # pylin
             elif tag == "/page":
                 if page:
                     page.append(line)
-                    print("".join(page).encode("utf-8"))
+                    print("".join(page))
                     if not templates:
                         break
                 page = []
@@ -80,7 +78,7 @@ def main():
         prog=os.path.basename(sys.argv[0]), formatter_class=argparse.RawDescriptionHelpFormatter, description=__doc__
     )
     parser.add_argument("input", help="XML wiki dump file")
-    parser.add_argument("--article_id", default="", help="article number")
+    parser.add_argument("--article_id", default="1", help="article number")
     parser.add_argument("--template", action="store_true", help="template number")
     parser.add_argument(
         "-v", "--version", action="version", version="%(prog)s " + version, help="print program version"
